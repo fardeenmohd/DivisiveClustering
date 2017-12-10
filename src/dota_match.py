@@ -36,6 +36,16 @@ class DotaMatch:
         self.dire_towers_status = match_info_dict['tower_status_dire']
         self.radiant_towers_status = match_info_dict['tower_status_radiant']
 
+        self.heroes_that_won = []
+        self.heroes_that_lost = []
+
+        if self.radiant_win:
+            self.heroes_that_won = [int(hero_id) for hero_id in rad_heroes]
+            self.heroes_that_lost = [int(hero_id) for hero_id in dire_heroes]
+        else:
+            self.heroes_that_won = [int(hero_id) for hero_id in dire_heroes]
+            self.heroes_that_lost = [int(hero_id) for hero_id in rad_heroes]
+
     def __str__(self):
 
         match_as_str = '*******************************************\n'
