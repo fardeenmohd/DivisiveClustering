@@ -24,17 +24,17 @@ class DotaMatch:
         self.radiant_hero_names = [hero_names[hero_id] for hero_id in self.radiant_heroes]
         self.dire_hero_names = [hero_names[hero_id] for hero_id in self.dire_heroes]
 
-        match_response = requests.get(API + MATCHES + str(self.match_id))
-        match_info_dict = json.loads(match_response.text)
-
-        self.dire_score = match_info_dict['dire_score']
-        self.radiant_score = match_info_dict['radiant_score']
-
-        self.dire_barracks_status = match_info_dict['barracks_status_dire']
-        self.radiant_barracks_status = match_info_dict['barracks_status_radiant']
-
-        self.dire_towers_status = match_info_dict['tower_status_dire']
-        self.radiant_towers_status = match_info_dict['tower_status_radiant']
+        # match_response = requests.get(API + MATCHES + str(self.match_id))
+        # match_info_dict = json.loads(match_response.text)
+        #
+        # self.dire_score = match_info_dict['dire_score']
+        # self.radiant_score = match_info_dict['radiant_score']
+        #
+        # self.dire_barracks_status = match_info_dict['barracks_status_dire']
+        # self.radiant_barracks_status = match_info_dict['barracks_status_radiant']
+        #
+        # self.dire_towers_status = match_info_dict['tower_status_dire']
+        # self.radiant_towers_status = match_info_dict['tower_status_radiant']
 
         self.heroes_that_won = []
         self.heroes_that_lost = []
@@ -58,16 +58,16 @@ class DotaMatch:
 
         match_as_str += '----- Radiant statistics -----' '\n'
         match_as_str += 'Radiant won: ' + str(self.radiant_win) + '\n'
-        match_as_str += 'Radiant score: ' + str(self.radiant_score) + '\n'
+        # match_as_str += 'Radiant score: ' + str(self.radiant_score) + '\n'
         match_as_str += 'Radiant heroes: ' + str(self.radiant_hero_names) + '\n'
-        match_as_str += 'Radiant barrack status: ' + str(self.radiant_barracks_status) + '\n'
-        match_as_str += 'Radiant tower status: ' + str(self.radiant_towers_status) + '\n'
+        # match_as_str += 'Radiant barrack status: ' + str(self.radiant_barracks_status) + '\n'
+        # match_as_str += 'Radiant tower status: ' + str(self.radiant_towers_status) + '\n'
 
         match_as_str += '----- Dire statistics -----' '\n'
         match_as_str += 'Dire won: ' + str(self.dire_win) + '\n'
-        match_as_str += 'Dire score: ' + str(self.dire_score) + '\n'
+        # match_as_str += 'Dire score: ' + str(self.dire_score) + '\n'
         match_as_str += 'Dire heroes: ' + str(self.dire_hero_names) + '\n'
-        match_as_str += 'Dire barrack status: ' + str(self.dire_barracks_status) + '\n'
-        match_as_str += 'Dire tower status: ' + str(self.dire_towers_status) + '\n'
+        # match_as_str += 'Dire barrack status: ' + str(self.dire_barracks_status) + '\n'
+        # match_as_str += 'Dire tower status: ' + str(self.dire_towers_status) + '\n'
 
         return match_as_str

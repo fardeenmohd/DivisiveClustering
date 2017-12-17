@@ -3,38 +3,25 @@ import json
 from dota_match import DotaMatch
 import clustering
 import time
-
-API = 'https://api.opendota.com/api/'
-PUBLIC_MATCHES = 'publicMatches'
-HEROES = 'heroes'
-MATCHES = 'matches'
-
-
-def get_hero_names():
-    list_of_hero_dicts = json.loads(heroes_response.text)
-    hero_names_dictionary = dict()
-    for hero_dict in list_of_hero_dicts:
-        hero_names_dictionary[hero_dict['id']] = hero_dict['localized_name']
-
-    print('Hero id and names: ' + str(hero_names_dictionary))
-    return hero_names_dictionary
-
+import data_collector
+import json
 
 if __name__ == '__main__':
 
-    matches_response = requests.get(API + PUBLIC_MATCHES)
-    heroes_response = requests.get(API + HEROES)
+    # list_of_match_dicts = data_collector.get_list_of_matche_dicts()
+    collector = data_collector.DataCollector()
+    list_of_dota_matches = collector.read_dota_matches_from_file()
+    hero_names_dict = data_collector.get_hero_names()
 
-    list_of_match_dicts = json.loads(matches_response.text)
-    list_of_dota_matches = list()
-    hero_names_dict = get_hero_names()
-
-    for match_dict in list_of_match_dicts:
-        if match_dict['avg_mmr'] is not None:
-            match = DotaMatch(match_dict, hero_names_dict)
-            list_of_dota_matches.append(match)
-            print(str(match))
-    print('Query returned ' + str(len(list_of_dota_matches)) + ' matches')
+    # for match_dict in list_of_match_dicts:
+    #     if match_dict['avg_mmr'] is not None:
+    #         try:
+    #             match = DotaMatch(match_dict, hero_names_dict)
+    #             list_of_dota_matches.append(match)
+    #             print(str(match))
+    #         except json.decoder.JSONDecodeError:
+    #             print('Caught json.decoder.JSONDecodeError Exception, ignoring match...')
+    # print('Query returned ' + str(len(list_of_dota_matches)) + ' matches')
 
     initial_cluster = clustering.Cluster(matches=list_of_dota_matches, hero_names=hero_names_dict)
     initial_cluster.print_center()
@@ -81,7 +68,7 @@ if __name__ == '__main__':
         cluster.print_center()
 
     random_start_time = time.time()
-    k_means_random_clusters = clustering.k_means(hero_names_dict=hero_names_dict, num_of_clusters=suggested_value_of_k,
+    k_means_random_clusters = clustering.k_means(hero_names_dict=hero_names_dict, num_of_clusters=10,
                                                  matches=list_of_dota_matches)
     random_end_time = time.time()
     print('K-Means with random initialization found clusters for k=' + str(
