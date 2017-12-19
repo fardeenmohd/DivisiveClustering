@@ -10,6 +10,7 @@ MATCHES = 'matches'
 
 
 def get_list_of_matche_dicts():
+    """Returns a python list of dictionaries containing match data"""
     matches_response = requests.get(API + PUBLIC_MATCHES)
     return json.loads(matches_response.text)
 
@@ -19,6 +20,7 @@ def get_heroes_response():
 
 
 def get_hero_names():
+    """Returns a dictionary of hero_id : int -> hero_name : str"""
     heroes_response = get_heroes_response()
     list_of_hero_dicts = json.loads(heroes_response.text)
     hero_names_dictionary = dict()
@@ -60,7 +62,7 @@ class DataCollector:
 
 if __name__ == '__main__':
     collector = DataCollector()
-    # collector.collect_and_save_matches()
+    collector.collect_and_save_matches()
     list_of_matches = collector.read_dota_matches_from_file()
     print('Found ' + str(len(list_of_matches)) + ' matches from file')
     for match in list_of_matches:

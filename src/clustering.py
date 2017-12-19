@@ -7,6 +7,7 @@ import random
 
 
 class Cluster:
+    """Class that represents a cluster, it has dota matches as its members and has a center"""
     def __init__(self, matches: List[DotaMatch] = None, hero_names: Dict[int, str] = None):
         self.matches = matches
         self.hero_names = hero_names
@@ -14,6 +15,10 @@ class Cluster:
         self.update_center()
 
     def update_center(self):
+        """
+        Checks all of its members and updates the self.center class member
+        """
+        # If we have no members then we have no center
         if len(self.matches) == 0:
             self.center = None
             return
@@ -23,29 +28,34 @@ class Cluster:
         victorious_hero_count = {}  # From hero_id -> number of heroes
         lost_hero_count = {}  # From hero_id -> number of heroes
 
+        # Initialize lists used to count of heroes that lost or won
         for hero_id, name in self.hero_names.items():
             victorious_hero_count[hero_id] = 0
             lost_hero_count[hero_id] = 0
 
+        # Count how many heroes won or lost in this cluster
         for hero in self.center.heroes_that_won:
             victorious_hero_count[hero] += 1
 
         for hero in self.center.heroes_that_lost:
             lost_hero_count[hero] += 1
 
+        # Calculate average of MMR, rank tier and duration
         for i in range(1, num_of_matches):
             self.center.avg_mmr += self.matches[i].avg_mmr
             self.center.avg_rank_tier += self.matches[i].avg_rank_tier
             self.center.duration += self.matches[i].duration
+            # Count heroes that won
             for hero in self.matches[i].heroes_that_won:
                 victorious_hero_count[hero] += 1
             for hero in self.matches[i].heroes_that_lost:
                 lost_hero_count[hero] += 1
-
+        # Sort the dictionary by the amount of wins a hero has
         sorted_victorious_hero_counts = sorted(victorious_hero_count.items(), key=operator.itemgetter(1))
         sorted_lost_hero_counts = sorted(lost_hero_count.items(), key=operator.itemgetter(1))
         # print('Victorious hero counts: ' + str(sorted_victorious_hero_counts))
         # print('Lost hero counts: ' + str(sorted_lost_hero_counts))
+        # Find top 5 heroes that win or lose
         most_common_winning_heroes = sorted_victorious_hero_counts[-5:]
         most_common_winning_heroes = [x[0] for x in most_common_winning_heroes]
         most_common_lost_heroes = sorted_lost_hero_counts[-5:]
@@ -53,6 +63,7 @@ class Cluster:
 
         self.center.heroes_that_won = most_common_winning_heroes
         self.center.heroes_that_lost = most_common_lost_heroes
+        # Calculate average mmr/rank tier/duration for this cluster
         self.center.avg_mmr = int(self.center.avg_mmr / num_of_matches)
         self.center.avg_rank_tier = int(self.center.avg_rank_tier / num_of_matches)
         self.center.duration = int(self.center.duration / num_of_matches)
@@ -70,43 +81,98 @@ class Cluster:
         print('Avg duration: ' + str(self.center.duration))
 
 
-def get_distance(d1: DotaMatch, d2: DotaMatch) -> int:
-    euclid_dist = sqrt((d1.avg_mmr - d2.avg_mmr) ** 2 + (d1.avg_rank_tier - d2.avg_rank_tier) ** 2 +
+def get_distance(d1: DotaMatch, d2: DotaMatch, hero_weight: int = 0.05) -> int:
+    """
+    Get's the distance between two dota match objects. (Between d1 and d2)
+
+    Parameters
+    ----------
+    d1 : DotaMatch
+        The first dota match in the pair
+    d2 : DotaMatch
+        The second dota match in the pair
+
+    Returns
+    -------
+    int
+        An integer value that represents the distance between d1 and d2
+    """
+    # Find the euclidean distance of the MMR and duration
+    euclid_dist = sqrt((d1.avg_mmr - d2.avg_mmr) ** 2 +
                        (d1.duration - d2.duration) ** 2)
-    hero_weight = 0.05
     hero_value = hero_weight * euclid_dist
 
+    # For every hero that won or lost a match in both matches, subtract a percentage of the euclidean distance
     for i in range(len(d1.heroes_that_won)):
-        for j in range(len(d2.heroes_that_won)):
-            if d1.heroes_that_won[i] == d2.heroes_that_won[j]:
-                # print('About to subtract hero value of: ' + str(hero_value) + ' from: ' + str(euclid_dist))
-                euclid_dist -= hero_value
-            if d1.heroes_that_lost[i] == d2.heroes_that_lost[j]:
-                # print('About to subtract hero value of: ' + str(hero_value) + ' from: ' + str(euclid_dist))
-                euclid_dist -= hero_value
+        if d1.heroes_that_won[i] in d2.heroes_that_won:
+            # print('About to subtract hero value of: ' + str(hero_value) + ' from: ' + str(euclid_dist))
+            euclid_dist -= hero_value
+        if d1.heroes_that_lost[i] in d2.heroes_that_lost:
+            # print('About to subtract hero value of: ' + str(hero_value) + ' from: ' + str(euclid_dist))
+            euclid_dist -= hero_value
     return int(euclid_dist)
 
 
-def get_distance_to_cluster(d1: DotaMatch, c1: Cluster) -> int:
-    euclid_dist = sqrt((d1.avg_mmr - c1.center.avg_mmr) ** 2 + (d1.avg_rank_tier - c1.center.avg_rank_tier) ** 2 +
+def get_distance_to_cluster(d1: DotaMatch, c1: Cluster, hero_weight: int = 0.05) -> int:
+    """
+    Get's the distance between a dota match and a cluster's center
+
+    Parameters
+    ----------
+    d1 : DotaMatch
+        A dota match that will have its distance measured to the cluster
+    c1 : Cluster
+        The center of this cluster will have its distance measured to d1
+
+    Returns
+    -------
+    int
+        An integer value that represents the distance between d1 and d2
+    """
+    # Distance between a match and a cluster is the distance between a match and the cluster's center
+    # Find the euclidean distance of the MMR and duration
+    euclid_dist = sqrt((d1.avg_mmr - c1.center.avg_mmr) ** 2 +
                        (d1.duration - c1.center.duration) ** 2)
-    hero_weight = 0.05
     hero_value = hero_weight * euclid_dist
 
+    # For every hero that won or lost a match in both matches, subtract a percentage of the euclidean distance
     for i in range(len(d1.heroes_that_won)):
-        for j in range(len(c1.center.heroes_that_won)):
-            if d1.heroes_that_won[i] == c1.center.heroes_that_won[j]:
-                # print('About to subtract hero value of: ' + str(hero_value) + ' from: ' + str(euclid_dist))
-                euclid_dist -= hero_value
-            if d1.heroes_that_lost[i] == c1.center.heroes_that_lost[j]:
-                # print('About to subtract hero value of: ' + str(hero_value) + ' from: ' + str(euclid_dist))
-                euclid_dist -= hero_value
+        if d1.heroes_that_won[i] in c1.center.heroes_that_won:
+            # print('About to subtract hero value of: ' + str(hero_value) + ' from: ' + str(euclid_dist))
+            euclid_dist -= hero_value
+        if d1.heroes_that_lost[i] in c1.center.heroes_that_lost:
+            # print('About to subtract hero value of: ' + str(hero_value) + ' from: ' + str(euclid_dist))
+            euclid_dist -= hero_value
     return int(euclid_dist)
 
 
 def k_means(hero_names_dict: Dict[int, str], num_of_clusters: int = 3,
             max_iters: int = 100, matches: List[DotaMatch] = None, final_clusters: List[Cluster] = None) -> List[Cluster]:
+    """
+    Get's the distance between a dota match and a cluster's center
 
+    Parameters
+    ----------
+    hero_names_dict : Dict[int, str]
+        A dictionary that stores key-value pairs of hero_id -> hero_name
+    num_of_clusters : int
+        The (fixed) amount of clusters that will group the data
+    max_iters: int
+        The maximum amount of iterations the main loop of the algorithm is allowed to run
+    matches: List[DotaMatch]
+        If this is not none then it is assumed we wish to perform k means with random initialization
+        This contains the list of matches to be grouped by k means
+    final_clusters: List[Cluster]
+        If this variable is not none then we already have the initial clusters and their members,
+         with this variable holding those clusters
+    Returns
+    -------
+    List[Cluster]
+        The list clusters obtained by the k-means algorithm
+    """
+
+    # final_clusters is None so we need to find 3 random cluster "seeds"
+    # We randomly assign every other dota match to each cluster that was randomly selected
     if final_clusters is None:
         final_clusters = []
         num_of_matches = len(matches)
@@ -125,16 +191,23 @@ def k_means(hero_names_dict: Dict[int, str], num_of_clusters: int = 3,
 
     while i < max_iters and has_changed:
         has_changed = False
+        # Update cluster centers since they might have new members
         for cluster in final_clusters:
             cluster.update_center()
+        # Loop through every cluster
         for i in range(len(final_clusters)):
             j = 0
+            # Loop through every dota match in a cluster
             while j < len(final_clusters[i].matches):
                 match = final_clusters[i].matches[j]
                 distances = []
+                # Calculate distance to every cluster
                 for k in range(len(final_clusters)):
                     distances.append(get_distance_to_cluster(match, final_clusters[k]))
                 closest_cluster_idx = distances.index(min(distances))
+                # Make the dota match join the new closest cluster
+                # Clusters cannot have 0 members so if its last match wants to leave it then
+                # do not allow it to do so
                 if closest_cluster_idx != i and len(final_clusters[i].matches) > 1:
                     final_clusters[i].matches.remove(match)
                     final_clusters[closest_cluster_idx].matches.append(match)
@@ -147,6 +220,22 @@ def k_means(hero_names_dict: Dict[int, str], num_of_clusters: int = 3,
 
 
 def split_cluster(cluster_to_be_split: Cluster, hero_names_dict: Dict[int, str], max_dist: int = 1000) -> Union[Tuple[Cluster, Cluster], None]:
+    """
+    Get's the distance between a dota match and a cluster's center
+
+    Parameters
+    ----------
+    cluster_to_be_split : Cluster
+        The cluster that may or may not be split in 2 separate clusters
+    hero_names_dict : Dict[int, str]
+        A dictionary that stores key-value pairs of hero_id -> hero_name
+    max_dist: int
+        The maximum distance between all pairs of matches must be bigger than this constant for the cluster to be split
+    Returns
+    -------
+    Union[Tuple[Cluster, Cluster], None]
+        A tuple of clusters that partition the input cluster or None if the split criteria has not been met
+    """
     new_clusters = Cluster(matches=[], hero_names=hero_names_dict), Cluster(matches=[], hero_names=hero_names_dict)
     max_found_dist = 0
     num_of_matches = len(cluster_to_be_split.matches)
@@ -170,7 +259,8 @@ def split_cluster(cluster_to_be_split: Cluster, hero_names_dict: Dict[int, str],
               + str(max_dist) + ', returning None')
         # We only split the cluster if the maximum distance between pairs is greater than a constant
         return None
-
+    # We have found the pair that is farthest apart
+    # So now every other dota match joins the closest of the two, forming 2 new clusters
     for i in range(num_of_matches):
         match = cluster_to_be_split.matches[i]
         if get_distance(match, cluster_to_be_split.matches[farthest_match_pair[0]]) < \
@@ -187,8 +277,23 @@ def split_cluster(cluster_to_be_split: Cluster, hero_names_dict: Dict[int, str],
 
 
 def run_divisive_clustering(cluster: Cluster, hero_names_dict: Dict[int, str], max_dist: int, final_clusters: List[Cluster]):
+    """
+    Runs the divisive clustering algorithm recursively
+
+    Parameters
+    ----------
+    cluster : Cluster
+        The inital cluster that should contain all data points
+    hero_names_dict : Dict[int, str]
+        A dictionary that stores key-value pairs of hero_id -> hero_name
+    max_dist: int
+        The maximum distance between all pairs of matches must be bigger than this constant for the cluster to be split
+    final_clusters:
+        The return value that contains all the final clusters than cannot be divided further
+    """
     new_clusters = split_cluster(cluster, hero_names_dict, max_dist)
     if new_clusters is None:
+        # split_cluster() returned None so that means
         # We could not split the input cluster so it is one of our final clusters
         final_clusters.append(cluster)
     else:
