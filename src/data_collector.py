@@ -3,6 +3,7 @@ import requests
 import json
 from dota_match import DotaMatch
 import os
+import argparse
 API = 'https://api.opendota.com/api/'
 PUBLIC_MATCHES = 'publicMatches'
 HEROES = 'heroes'
@@ -61,7 +62,18 @@ class DataCollector:
         return pickle.load(input_file)
 
 if __name__ == '__main__':
-    collector = DataCollector()
+    parser = argparse.ArgumentParser()
+    # The argument is of the form -f or --file.
+    # If -f or --file is given... for ex: "main.py -f" but no file is given then the "const" argument specifies the file
+    # If no -f or --file option is given at all then the "default" argument specifies the file
+    parser.add_argument('-f', '--file', nargs='?', type=str, default='../data/matches.pkl',
+                        const='../data/matches.pkl', help='Path to input file containing matches to be read')
+    parser.add_argument('-n', '--num-matches', nargs='?', type=int, default=5000,
+                        const=5000, help='Maximum number of matches to be collected')
+    program_args = vars(parser.parse_args())
+    data_file_path = program_args['file']
+    num_of_matches = program_args['num_matches']
+    collector = DataCollector(data_file_path=data_file_path, max_num_of_matches=num_of_matches)
     collector.collect_and_save_matches()
     list_of_matches = collector.read_dota_matches_from_file()
     print('Found ' + str(len(list_of_matches)) + ' matches from file')
